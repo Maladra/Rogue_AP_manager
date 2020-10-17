@@ -7,6 +7,9 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 import csv
 import time
+from subprocess import Popen
+
+p = Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
 
 def get_ap():
     csv_file = open('test2.csv', 'r')
@@ -41,7 +44,6 @@ def get_client():
             break
     csv_file.close()
     return client_list
-
 
 class SelectBSSIDWindow(Gtk.Window):
     def __init__(self):
@@ -123,3 +125,5 @@ win = SelectBSSIDWindow()
 win.connect("destroy", Gtk.main_quit)
 win.show_all()
 Gtk.main()
+
+p.terminate()
