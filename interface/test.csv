@@ -1,3 +1,4 @@
+
 BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key
 E8:1D:A8:3C:88:E8, 2020-10-16 14:16:43, 2020-10-16 15:58:18,  2,  -1, OPN, ,   , -63,        0,       13,  10.188. 58.206,   0, , 
 14:0C:76:AE:77:46, 2020-10-16 15:50:18, 2020-10-16 15:50:18,  5, 195, OPN, ,   , -65,        0,        0,   0.  0.  0.  0,   8, FreeWifi, 
