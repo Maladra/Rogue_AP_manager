@@ -1,0 +1,10 @@
+rfkill unblock wlan ## debloque device wifi
+sudo ss -lp 'sport = :domain' ## list service on port 53
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+
+iptables -I POSTROUTING -t nat -o <interface_internet> -j MASQUERADE
+#iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+#iptables --append FORWARD --in-interface wlan0 -j ACCEPT
+
+ip addr add 192.168.1.1/24 dev <interface_AP>
