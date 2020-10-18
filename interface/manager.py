@@ -163,3 +163,6 @@ win.show_all()
 Gtk.main()
 
 p.terminate()
+
+
+#Popen(['aireplay-ng' '--deauth' '5' '-a' '<BSSID>' '-c' '<mac adresse>' 'wlan0mon' '-D'])
