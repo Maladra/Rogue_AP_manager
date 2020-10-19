@@ -1,10 +1,42 @@
-rfkill unblock wlan ## debloque device wifi
+# Unlock wifi device
+rfkill unblock wlan
+
+# Checks service on port 53 for dnsmasq
 sudo ss -lp 'sport = :domain' ## list service on port 53
-echo 1 > /proc/sys/net/ipv4/ip_forward
+
+# Launch AP
+hostapd ./hostapd.conf
+
+# Launch HTTP/DNS server
+sudo dnsmasq -d -C dnsmasq_conf.txt
 
 
-iptables -I POSTROUTING -t nat -o <interface_internet> -j MASQUERADE
+# Permet le forward
+echo 1 > /proc/sys/net/ipv4/ip_forward 
+
+# Set ip to interface
+ip addr add 192.168.1.1/24 dev <interface_AP>
+
+# Forward
+sudo iptables -A FORWARD -i wlx78d294c227c2 -o enp0s31f6 -j ACCEPT
+# Forward
+sudo iptables -A FORWARD -i enp0s31f6 -o wlx78d294c227c2 -m state --state ESTABLISHED,RELATED -j ACCEPT
+# Same public IP than host
+sudo iptables -t nat -A POSTROUTING -o wlx78d294c227c2 -j MASQUERADE
+
+
+
+#iptables -I POSTROUTING -t nat -o <interface_internet> -j MASQUERADE
 #iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
 #iptables --append FORWARD --in-interface wlan0 -j ACCEPT
 
-ip addr add 192.168.1.1/24 dev <interface_AP>
+
+#1) Check fichier /etc/resolv.conf ex : nameserver 8.8.8.8
+#2) Unblock wlan device
+#3) Permettre le forward
+#4) Regles Iptable
+#5) Launch AP
+#6) Kill systemd-resolve
+#7) Launch DHCP/DNS server
+
+

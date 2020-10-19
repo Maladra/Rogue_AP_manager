@@ -2,4 +2,3 @@ interface=wlx78d294c227c2
 
 dhcp-range=192.168.1.50,192.168.1.150, 12h
 dhcp-option=3,192.168.1.1 # Gateway
-dhcp-option=6,8.8.8.8 # DNS
