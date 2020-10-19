@@ -22,13 +22,8 @@ sudo iptables -A FORWARD -i wlx78d294c227c2 -o enp0s31f6 -j ACCEPT
 # Forward
 sudo iptables -A FORWARD -i enp0s31f6 -o wlx78d294c227c2 -m state --state ESTABLISHED,RELATED -j ACCEPT
 # Same public IP than host
-sudo iptables -t nat -A POSTROUTING -o wlx78d294c227c2 -j MASQUERADE
+sudo iptables -t nat -A POSTROUTING -o enp0s31f6 -j MASQUERADE
 
-
-
-#iptables -I POSTROUTING -t nat -o <interface_internet> -j MASQUERADE
-#iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
-#iptables --append FORWARD --in-interface wlan0 -j ACCEPT
 
 
 #1) Check fichier /etc/resolv.conf ex : nameserver 8.8.8.8
