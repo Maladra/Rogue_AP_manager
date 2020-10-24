@@ -1,0 +1,3 @@
+libpcap
+libusb-1.0-0 (required by the HID module)
+libnetfilter-queue (on Linux only, required by the packet.proxy module)
