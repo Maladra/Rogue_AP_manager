@@ -1,28 +1,7 @@
-# Unlock wifi device
-rfkill unblock wlan
-
 # Checks service on port 53 for dnsmasq
 sudo ss -lp 'sport = :domain' ## list service on port 53
 
-# Launch AP
-hostapd ./hostapd.conf
 
-# Launch HTTP/DNS server
-sudo dnsmasq -d -C dnsmasq_conf.txt
-
-
-# Permet le forward
-echo 1 > /proc/sys/net/ipv4/ip_forward 
-
-# Set ip to interface
-ip addr add 192.168.1.1/24 dev <interface_AP>
-
-# Forward
-sudo iptables -A FORWARD -i wlx78d294c227c2 -o enp0s31f6 -j ACCEPT
-# Forward
-sudo iptables -A FORWARD -i enp0s31f6 -o wlx78d294c227c2 -m state --state ESTABLISHED,RELATED -j ACCEPT
-# Same public IP than host
-sudo iptables -t nat -A POSTROUTING -o enp0s31f6 -j MASQUERADE
 
 
 

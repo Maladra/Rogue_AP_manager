@@ -3,22 +3,22 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 import csv
 import time
-from subprocess import Popen
+import subprocess
 
-p = Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
+#p = subprocess.Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
 
 ## Quick fix really dirty
 time.sleep(2)
 
 def get_ap():
-    csv_file = open(' from_py-01.csv', 'r')
+    csv_file = open('test2.csv', 'r') # When used with airodump add space at start
     csv_file.readline() ## Ignore first line tricks
     csv_file.readline() ## Ignore second line
     reader = csv.reader(csv_file, delimiter=',')
     AP_list = []
     for row in reader:
         try:
-            data = (row[0], row[3], row[13])
+            data = (row[0].strip(), row[3].strip(), row[13].strip())
             AP_list.append(data)
         except:
             break
@@ -28,7 +28,7 @@ def get_ap():
 def get_client():
     client_list = []
     printed = False
-    csv_file = open(' from_py-01.csv', 'r')
+    csv_file = open('test2.csv', 'r') # When used with airodump add space at start
     values = csv_file.readlines()
     for line in values:
         try:
@@ -37,7 +37,7 @@ def get_client():
                 continue
             if printed:
                 splited_line = line.split(',')
-                data = (splited_line[0], splited_line[5])
+                data = (splited_line[0].strip(), splited_line[5].strip())
                 client_list.append(data)
         except:
             break
@@ -77,12 +77,7 @@ class SelectBSSIDWindow(Gtk.Window):
         self.treeview_ap.append_column(self.column_bssid)
         self.treeview_ap.append_column(self.column_bssid_channel)
         self.treeview_ap.append_column(self.column_apname)
-        
-        ## Add selectable
-        #self.select_ap = self.treeview_ap.get_selection()
-        #print(self.select_ap)
-        #self.select_ap.connect("changed", self.on_tree_ap_selection_changed)
-        
+
         ## Add scrollable Window to box
         self.box.pack_start(self.scrollable_treeview_ap, True, True, 0)
 
@@ -143,34 +138,27 @@ class SelectBSSIDWindow(Gtk.Window):
     def on_button_deauth_clicked(self, widget):
         selection_ap = self.treeview_ap.get_selection()
         model_ap, treeiter_ap = selection_ap.get_selected()
-        print (model[treeiter][0])
-        for client in self.clientAP_list:
-            print (client[1])
-            if client[1] == model_ap[treeiter_ap][0]:
-                print ("True")
-        if treeiter is not None:
-            #Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[1], 'wlan0mon', '-D'])
-            print (model_ap[treeiter_ap][0])
+        print (model_ap[treeiter_ap][0])
+        if treeiter_ap is not None:
+            for client in self.clientAP_list:
+                if client[1] == model_ap[treeiter_ap][0]:
+                    print ("True")
+                    #subprocess.Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[0], 'wlan0mon', '-D'])
 
     def on_fakeAP_clicked(self, widget):
+        config_system = subprocess.run([ "/bin/bash",'../conf/config.sh'])
         print ("Fake AP start")
 
     def on_button_sslstrip_clicked(self, widget):
         print ("sslstrip start")
-
-    ## TREE
-    #def on_tree_ap_selection_changed(self, selection):
-    #    model, treeiter = selection.get_selected()
-    #    if treeiter is not None:
-    #        print("You selected MAC ap adress", model[treeiter][0])
-
 
 win = SelectBSSIDWindow()
 win.connect("destroy", Gtk.main_quit)
 win.show_all()
 Gtk.main()
 
-p.terminate()
 
-
-#Popen(['aireplay-ng' '--deauth' '5' '-a' '<BSSID>' '-c' '<mac adresse>' 'wlan0mon' '-D'])
+try:
+    p.terminate()
+except NameError:
+    pass
