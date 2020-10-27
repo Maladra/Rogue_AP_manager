@@ -4,9 +4,11 @@ from gi.repository import Gtk
 import csv
 import time
 import subprocess
+import signal
 
+process_list = []
 #p = subprocess.Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
-
+#process_list.append(p)
 ## Quick fix really dirty
 time.sleep(2)
 
@@ -146,7 +148,11 @@ class SelectBSSIDWindow(Gtk.Window):
                     #subprocess.Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[0], 'wlan0mon', '-D'])
 
     def on_fakeAP_clicked(self, widget):
-        config_system = subprocess.run([ "/bin/bash",'../conf/config.sh'])
+        config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
+        start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
+        process_list.append('hostapd')
+        start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
+        process_list.append('dnsmasq')
         print ("Fake AP start")
 
     def on_button_sslstrip_clicked(self, widget):
@@ -158,7 +164,7 @@ win.show_all()
 Gtk.main()
 
 
-try:
-    p.terminate()
-except NameError:
-    pass
+
+for process in process_list:
+    kill = subprocess.run(["killall", process])
+    time.sleep(0.5)

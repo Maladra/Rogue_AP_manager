@@ -1,2 +1,2 @@
 # Launch AP
-hostapd ./hostapd.conf
+hostapd ../conf/hostapd.conf
