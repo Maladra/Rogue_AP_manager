@@ -156,7 +156,8 @@ class SelectBSSIDWindow(Gtk.Window):
         print ("Fake AP start")
 
     def on_button_sslstrip_clicked(self, widget):
-        print ("sslstrip start")
+        start_proxy = subprocess.Popen(['../mitmdump', '-w', 'outfile', '~m post'])
+        process_list.append('mitmdump')
 
 win = SelectBSSIDWindow()
 win.connect("destroy", Gtk.main_quit)
