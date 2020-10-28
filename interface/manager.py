@@ -50,6 +50,18 @@ def get_client():
 def filter_client():
     return NotImplemented
 
+def edit_conf_file():
+    ## Open old file
+    ## Open new file
+    ## Copy old to new
+    ## si value match remplace
+    ## close old
+    ## delete old
+    ## replace old with new
+
+def read_value():
+
+
 class SelectBSSIDWindow(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title="BSSID Select")
@@ -120,6 +132,17 @@ class SelectBSSIDWindow(Gtk.Window):
         self.button_sslstrip.connect("clicked", self.on_button_sslstrip_clicked)
         self.box.pack_start(self.button_sslstrip, True, True, 0)
 
+        ## Listen interface name
+        self.listen_interface_label = Gtk.Label(label="Nom interface pour l'AP")
+        self.box.pack_start(self.listen_interface_label, True, True, 0)
+        self.listen_interface_name = Gtk.Entry()
+        self.box.pack_start(self.listen_interface_name, True, True, 0)
+
+        ## SSID name
+        self.ssid_name_label = Gtk.Label(label="Nom de l'AP")
+        self.box.pack_start(self.ssid_name_label, True, True, 0)
+        self.ssid_name = Gtk.Entry()
+        self.box.pack_start(self.ssid_name, True, True, 0)
 
     ######## Function
 
@@ -148,11 +171,12 @@ class SelectBSSIDWindow(Gtk.Window):
                     #subprocess.Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[0], 'wlan0mon', '-D'])
 
     def on_fakeAP_clicked(self, widget):
-        config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
-        start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
-        process_list.append('hostapd')
-        start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
-        process_list.append('dnsmasq')
+        print (self.listen_interface_name.get_text())
+        #config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
+        #start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
+        #process_list.append('hostapd')
+        #start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
+        #process_list.append('dnsmasq')
         print ("Fake AP start")
 
     def on_button_sslstrip_clicked(self, widget):
@@ -163,8 +187,6 @@ win = SelectBSSIDWindow()
 win.connect("destroy", Gtk.main_quit)
 win.show_all()
 Gtk.main()
-
-
 
 for process in process_list:
     kill = subprocess.run(["killall", process])

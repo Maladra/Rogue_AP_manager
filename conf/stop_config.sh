@@ -1,11 +1,11 @@
 # Unlock wifi device
-rfkill unblock wlan
+rfkill block wlan ## OK
 
 # Permet le forward
-echo 1 > /proc/sys/net/ipv4/ip_forward 
+echo 0 > /proc/sys/net/ipv4/ip_forward ## OK
 
 # Set ip to interface
-ip addr add 192.168.1.1/24 dev wlx78d294c227c2
+ip addr del 192.168.1.1/24 dev wlx78d294c227c2 ## OK
 
 
 # Forward
