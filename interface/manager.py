@@ -1,14 +1,20 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+
 import csv
 import time
 import subprocess
 import signal
+from tempfile import mkstemp
+from shutil import move, copymode
+from os import fdopen, remove
+
 
 process_list = []
 #p = subprocess.Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
 #process_list.append(p)
+
 ## Quick fix really dirty
 time.sleep(2)
 
@@ -50,16 +56,29 @@ def get_client():
 def filter_client():
     return NotImplemented
 
-def edit_conf_file():
-    ## Open old file
-    ## Open new file
-    ## Copy old to new
-    ## si value match remplace
-    ## close old
-    ## delete old
-    ## replace old with new
+def replace(file_path, pattern, subst):
+    #Create temp file
+    fh, abs_path = mkstemp()
+    with fdopen(fh,'w') as new_file:
+        with open(file_path) as old_file:
+            for line in old_file:
+                if pattern in line:
+                    new_file.write(pattern + subst +'\n')
+                else:
+                    new_file.write(line)
+    #Copy the file permissions from the old file to the new file
+    copymode(file_path, abs_path)
+    #Remove original file
+    remove(file_path)
+    #Move new file
+    move(abs_path, file_path)
 
-def read_value():
+def read_value(file_path, pattern):
+    with open(file_path) as ofile:
+        for line in ofile:
+            if pattern in line:
+                line_splited = line.split('=')
+    return line_splited[1]
 
 
 class SelectBSSIDWindow(Gtk.Window):
@@ -69,6 +88,7 @@ class SelectBSSIDWindow(Gtk.Window):
         ## Box
         self.box = Gtk.Box(spacing=6)
         self.add(self.box)
+        
         ## List Model AP
         self.AP_liststore_model = Gtk.ListStore(str, str, str)
         self.AP_list = get_ap()
@@ -76,6 +96,7 @@ class SelectBSSIDWindow(Gtk.Window):
             self.AP_liststore_model.append(list(AP))
         self.current_filter_language = None
 
+        
         ## Define AP Treeview
         self.treeview_ap = Gtk.TreeView(model=self.AP_liststore_model)
         ## Scrollable Window
@@ -91,7 +112,6 @@ class SelectBSSIDWindow(Gtk.Window):
         self.treeview_ap.append_column(self.column_bssid)
         self.treeview_ap.append_column(self.column_bssid_channel)
         self.treeview_ap.append_column(self.column_apname)
-
         ## Add scrollable Window to box
         self.box.pack_start(self.scrollable_treeview_ap, True, True, 0)
 
@@ -102,6 +122,7 @@ class SelectBSSIDWindow(Gtk.Window):
             self.clientAP_liststore_model.append(list(client))
         self.current_filter_language = None
         
+        ## Tree view client ap
         self.treeview_client_ap = Gtk.TreeView(model=self.clientAP_liststore_model)
         self.scrollable_treeview_client = Gtk.ScrolledWindow()
         self.scrollable_treeview_client.add(self.treeview_client_ap)
@@ -136,17 +157,26 @@ class SelectBSSIDWindow(Gtk.Window):
         self.listen_interface_label = Gtk.Label(label="Nom interface pour l'AP")
         self.box.pack_start(self.listen_interface_label, True, True, 0)
         self.listen_interface_name = Gtk.Entry()
+        self.interface_name = read_value('../conf/hostapd.conf', 'interface=')
+        self.listen_interface_name.set_text(self.interface_name[:-1])
         self.box.pack_start(self.listen_interface_name, True, True, 0)
 
         ## SSID name
         self.ssid_name_label = Gtk.Label(label="Nom de l'AP")
         self.box.pack_start(self.ssid_name_label, True, True, 0)
-        self.ssid_name = Gtk.Entry()
-        self.box.pack_start(self.ssid_name, True, True, 0)
+        self.ssid_name_entry = Gtk.Entry()
+        self.ssid_name = read_value('../conf/hostapd.conf', 'ssid=')
+        self.ssid_name_entry.set_text(self.ssid_name[:-1])
+        self.box.pack_start(self.ssid_name_entry, True, True, 0)
+
+        ## Define set value button
+        self.button_set_value = Gtk.Button(label='Set value interface/name')
+        self.button_set_value.connect("clicked", self.on_button_set_value_clicked)
+        self.box.pack_start(self.button_set_value, True, True, 0)
+
 
     ######## Function
 
-    ## Buttons 
     def on_button_refresh_clicked(self, widget):
         AP_list = get_ap()
         self.AP_liststore_model.clear()
@@ -172,16 +202,20 @@ class SelectBSSIDWindow(Gtk.Window):
 
     def on_fakeAP_clicked(self, widget):
         print (self.listen_interface_name.get_text())
-        #config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
-        #start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
-        #process_list.append('hostapd')
-        #start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
-        #process_list.append('dnsmasq')
-        print ("Fake AP start")
+        config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
+        start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
+        process_list.append('hostapd')
+        start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
+        process_list.append('dnsmasq')
 
     def on_button_sslstrip_clicked(self, widget):
         start_proxy = subprocess.Popen(['../mitmdump', '-w', 'outfile', '~m post'])
         process_list.append('mitmdump')
+
+    def on_button_set_value_clicked(self, widget):
+        replace('../conf/hostapd.conf', 'interface=', self.listen_interface_name.get_text())
+        replace('../conf/hostapd.conf', 'ssid=', self.ssid_name_entry.get_text())
+        replace('../conf/dnsmasq.conf', 'interface=', self.listen_interface_name.get_text())
 
 win = SelectBSSIDWindow()
 win.connect("destroy", Gtk.main_quit)
