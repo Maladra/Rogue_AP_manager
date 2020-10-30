@@ -1,3 +1,0 @@
-1ere_ligne=56
-interface=BONJOUR
-3eme_ligne=57

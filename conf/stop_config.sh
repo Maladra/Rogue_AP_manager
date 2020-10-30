@@ -1,3 +1,9 @@
+#### EDIT ####
+ip_interface=192.168.1.1/24
+ap_interface_name=wlx78d294c227c2
+internet_interface=enp0s31f6
+##############
+
 # Unlock wifi device
 rfkill block wlan ## OK
 
@@ -5,12 +11,12 @@ rfkill block wlan ## OK
 echo 0 > /proc/sys/net/ipv4/ip_forward ## OK
 
 # Set ip to interface
-ip addr del 192.168.1.1/24 dev wlx78d294c227c2 ## OK
+ip addr del $ip_interface dev $ap_interface_name ## OK
 
 
 # Forward
-iptables -A FORWARD -i wlx78d294c227c2 -o enp0s31f6 -j ACCEPT
+iptables -D FORWARD -i $ap_interface_name -o $internet_interface -j ACCEPT
 ## Forward
-iptables -A FORWARD -i enp0s31f6 -o wlx78d294c227c2 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -D FORWARD -i $internet_interface -o $ap_interface_name -m state --state ESTABLISHED,RELATED -j ACCEPT
 ## Same public IP than host
-iptables -t nat -A POSTROUTING -o enp0s31f6 -j MASQUERADE
+iptables -t nat -D POSTROUTING -o $internet_interface -j MASQUERADE

