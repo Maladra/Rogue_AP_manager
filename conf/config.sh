@@ -1,8 +1,6 @@
-#### EDIT ####
-ip_interface=192.168.1.1/24
-ap_interface_name=wlx78d294c227c2
-internet_interface=enp0s31f6
-##############
+ip_interface=192.168.1.1/20
+ap_interface_name=wlx78d294c227c0
+internet_interface=enp0s31f2
 
 # Unlock wifi device
 rfkill unblock wlan

