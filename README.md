@@ -1,10 +1,8 @@
 # Rogue_AP_manager
 
-1) Résumé
-je voulais initialement réaliser une petite interface graphique permettant différentes interactions (start un AP avec DHCP et DNS avec la possibilité d'utiliser un proxy HTTPS-->HTTP), l'idée était de pouvoir ajouter facilement d'autres interactions avec un type de programmation événementielle.
+1)Je voulais initialement réaliser une petite interface graphique permettant différentes interactions (start un AP avec DHCP et DNS avec la possibilité d'utiliser un proxy HTTPS-->HTTP), l'idée était de pouvoir ajouter facilement d'autres interactions avec un type de programmation événementielle.
 
-2) Arborecence projet
-Deux principaux dossiers conf contenant tous les fichiers de configurations, et le dossier interface, contenant l'interface en question.
+2)Deux principaux dossiers conf contenant tous les fichiers de configurations, et le dossier interface, contenant l'interface en question.
 
 3) Configuration initiale
 Penser à désactiver les services écoutant sur le port 53, personnellement j'avais le systemd-resolved qui fonctionnait sur le port 53. Pour lister les services écoutant sur le port 53 il suffit de faire la commande `sudo ss -lp 'sport = :domain' ## list service on port 53`. Je dois donc mettre une valeur à la main dans le fichier `/etc/resolv.conf` exemple : `nameserver 1.1.1.1`, qui servira de serveur DNS.
@@ -20,7 +18,7 @@ Pour lancer : sudo Python3 ./manager.py
 
 
 Les différents éléments de l'interface : 
-- Les deux listes représentent d'une les AP accessiblent, et l'autre liste les clients.
+- Les deux listes représentent d'une les AP accessiblent, et l'autre la liste des clients.
 - Le bouton Refresh permet d'actualiser ces listes
 - Le bouton Deauth Client permet de déconnecter l'utilisateur connecté (Il faut selectionner le client et la borne Wi-fi).
 - Range ip local : Définie la range d'IP fournit par DNSmasq.
