@@ -306,5 +306,5 @@ if started_service['ap']:
     rollback_config = subprocess.run(["/bin/bash", '../conf/stop_config.sh'])
 
 if started_service['sslstrip']:
-    stop_forward = forward = subprocess.run(['iptables', '-t', 'nat', '-D', 'PREROUTING', '-i', self.listen_interface_name.get_text(), '-p', 'tcp', '--match', 'multiport', '--dports 80,443', '-j REDIRECT', '--to-port', '8080'])
+    stop_forward = subprocess.run(['iptables', '-t', 'nat', '-D', 'PREROUTING', '-i', self.listen_interface_name.get_text(), '-p', 'tcp', '--match', 'multiport', '--dports 80,443', '-j REDIRECT', '--to-port', '8080'])
 
